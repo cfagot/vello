@@ -613,7 +613,7 @@ impl Renderer {
 }
 
 #[cfg(feature = "wgpu")]
-struct TargetTexture {
+pub struct TargetTexture {
     view: TextureView,
     width: u32,
     height: u32,
@@ -643,17 +643,29 @@ impl TargetTexture {
             height,
         }
     }
+
+    pub fn need_resize(&self, width: u32, height: u32) -> bool {
+        self.width != width || self.height != height
+    }
+
+    pub fn get_view(&self) -> &TextureView {
+        &self.view
+    }
 }
 
 #[cfg(feature = "wgpu")]
-struct BlitPipeline {
+pub struct BlitPipeline {
     bind_layout: wgpu::BindGroupLayout,
     pipeline: wgpu::RenderPipeline,
 }
 
 #[cfg(feature = "wgpu")]
 impl BlitPipeline {
-    fn new(device: &Device, format: TextureFormat) -> Self {
+    pub fn new(device: &Device, format: TextureFormat) -> Self {
+        Self::new_with_blend(device, format, None)
+    }
+
+    pub fn new_with_blend(device: &Device, format: TextureFormat, blend_state: Option<wgpu::BlendState>) -> Self {
         const SHADERS: &str = r#"
             @vertex
             fn vs_main(@builtin(vertex_index) ix: u32) -> @builtin(position) vec4<f32> {
@@ -721,7 +733,7 @@ impl BlitPipeline {
                 compilation_options: PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::ColorTargetState {
                     format,
-                    blend: None,
+                    blend: blend_state,
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -747,4 +759,13 @@ impl BlitPipeline {
             pipeline,
         }
     }
+
+    pub fn get_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
+        &self.bind_layout
+    }
+
+    pub fn get_pipeline(&self) -> &wgpu::RenderPipeline {
+        &self.pipeline
+    }
+
 }
